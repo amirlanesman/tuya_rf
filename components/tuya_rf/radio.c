@@ -53,8 +53,6 @@ int RF_Init(void)
 }
 
 int StartTx() {
- 	pinMode(CMT2300A_GPIO1_PIN, OUTPUT);
-	digitalWrite(CMT2300A_GPIO1_PIN, LOW);
      if (RF_Init()!=0) {
         return 1;
 	}
@@ -66,7 +64,6 @@ int StartTx() {
 	CMT2300A_GoSleep();
 	CMT2300A_GoStby();
 	if (CMT2300A_GoTx()) {
-  	    digitalWrite(CMT2300A_GPIO1_PIN, HIGH);
         return 0;
     } else {
         return 2;
@@ -96,7 +93,6 @@ int StartRx() {
     CMT2300A_EnableFifoMerge(true);
 	CMT2300A_ClearInterruptFlags();
 	CMT2300A_ClearRxFifo();
-	pinMode(CMT2300A_GPIO2_PIN, INPUT);
 	
     CMT2300A_GoRx();
 

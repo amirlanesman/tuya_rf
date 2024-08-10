@@ -15,6 +15,8 @@ from esphome.const import (
     CONF_VALUE,
 )
 CONF_RECEIVER_DISABLED = "receiver_disabled"
+CONF_RX_PIN = "rx_pin"
+CONF_TX_PIN = "tx_pin"
 
 from esphome.core import CORE, TimePeriod
 
@@ -83,6 +85,8 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(TuyaRfComponent),
+            cv.Optional(CONF_TX_PIN, default='P20'): cv.All(pins.internal_gpio_output_pin_schema),
+            cv.Optional(CONF_RX_PIN, default='P22'): cv.All(pins.internal_gpio_input_pin_schema),
             cv.Optional(CONF_RECEIVER_DISABLED, default=False): cv.boolean,
             cv.Optional(CONF_DUMP, default=[]): remote_base.validate_dumpers,
             cv.Optional(CONF_TOLERANCE, default="25%"): validate_tolerance,
@@ -101,7 +105,9 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
 
 
 async def to_code(config):
-    var = cg.new_Pvariable(config[CONF_ID])
+    rx_pin = await cg.gpio_pin_expression(config[CONF_RX_PIN])
+    tx_pin = await cg.gpio_pin_expression(config[CONF_TX_PIN])
+    var = cg.new_Pvariable(config[CONF_ID],tx_pin,rx_pin)
     #await cg.register_component(var, config)
     dumpers = await remote_base.build_dumpers(config[CONF_DUMP])
     for dumper in dumpers:

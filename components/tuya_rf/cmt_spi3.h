@@ -32,9 +32,6 @@ extern int ty_read_sdio_pin(void);
 *  ************************************************************************ */
 #define t_nSysTickCount 	millis() //ͬ��ʱ�ӣ��û����Բ��ö���
 
-#define CMT2300A_GPIO2_PIN						PIN_P22
-#define CMT2300A_GPIO1_PIN						PIN_P20 //34  //interupt pin
-
 #define CMT2300A_SPI_SCLK_PIN					PIN_P14
 #define CMT2300A_SPI_MOSI_PIN					PIN_P16
 

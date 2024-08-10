@@ -32,7 +32,7 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
                                    public Component
 {
  public:
-  explicit TuyaRfComponent() : remote_base::RemoteTransmitterBase(NULL), remote_base::RemoteReceiverBase(NULL) {}
+  explicit TuyaRfComponent(InternalGPIOPin *tx_pin, InternalGPIOPin *rx_pin) : remote_base::RemoteTransmitterBase(tx_pin), remote_base::RemoteReceiverBase(rx_pin) {}
   void setup() override;
 
   void dump_config() override;

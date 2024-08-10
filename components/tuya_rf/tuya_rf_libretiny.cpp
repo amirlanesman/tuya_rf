@@ -13,7 +13,7 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
   const uint32_t now = micros();
   // If the lhs is 1 (rising edge) we should write to an uneven index and vice versa
   const uint32_t next = (arg->buffer_write_at + 1) % arg->buffer_size;
-  const bool level = digitalRead(CMT2300A_GPIO2_PIN)==LOW; //inverted //arg->pin.digital_read();
+  const bool level = arg->pin.digital_read();
   if (level != next % 2)
     return;
 
@@ -30,19 +30,16 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
 }
 
 void TuyaRfComponent::setup() {
-  //this->pin_->setup();
-  //this->pin_->pin_mode(gpio::FLAG_OUTPUT);
-  //this->pin_->digital_write(false);
-  pinMode(CMT2300A_GPIO1_PIN, OUTPUT);
-  digitalWrite(CMT2300A_GPIO1_PIN, LOW);
+  this->RemoteTransmitterBase::pin_->setup();
+  this->RemoteTransmitterBase::pin_->digital_write(false);
   if (this->receiver_disabled_) {
     return;
   }
-  pinMode(CMT2300A_GPIO2_PIN, INPUT);
+  this->RemoteReceiverBase::pin_->setup();
   
   auto &s = this->store_;
   s.filter_us = this->filter_us_;
-  //s.pin = this->pin_->to_isr();
+  s.pin = this->RemoteReceiverBase::pin_->to_isr();
   s.buffer_size = this->buffer_size_;
 
   this->high_freq_.start();
@@ -58,25 +55,25 @@ void TuyaRfComponent::setup() {
   StartRx();
   
   // First index is a space.
-  if (digitalRead(CMT2300A_GPIO2_PIN)==LOW) {//Inverted /*this->pin_->digital_read()*/) {
+  if (this->RemoteReceiverBase::pin_->digital_read()) {
     s.buffer_write_at = s.buffer_read_at = 1;
   } else {
     s.buffer_write_at = s.buffer_read_at = 0;
   }
   
-  attachInterruptParam(CMT2300A_GPIO2_PIN, (voidFuncPtrParam)RemoteReceiverComponentStore::gpio_intr, CHANGE, &this->store_);
-  //this->pin_->attach_interrupt(RemoteReceiverComponentStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
+  this->RemoteReceiverBase::pin_->attach_interrupt(RemoteReceiverComponentStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
   
 }
 
 void TuyaRfComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "Tuya Rf:");
+  LOG_PIN("  Tx Pin: ",this->RemoteTransmitterBase::pin_);
   if (this->receiver_disabled_) {
     ESP_LOGCONFIG(TAG, "  Receiver disabled");
     return;
   }
-  //LOG_PIN("  Pin: ", this->pin_);
-  if (digitalRead(CMT2300A_GPIO2_PIN)==LOW) { //inverted
+  LOG_PIN("  Rx Pin: ", this->RemoteReceiverBase::pin_);
+  if (this->RemoteReceiverBase::pin_->digital_read()) {
     ESP_LOGW(TAG, "Remote Receiver Signal starts with a HIGH value. Usually this means you have to "
                   "invert the signal using 'inverted: True' in the pin schema!");
   }
@@ -100,18 +97,14 @@ void TuyaRfComponent::await_target_time_() {
 
 void TuyaRfComponent::mark_(uint32_t usec) {
   this->await_target_time_();
-  //this->pin_->digital_write(true);
-  digitalWrite(CMT2300A_GPIO1_PIN, LOW);
+  this->RemoteTransmitterBase::pin_->digital_write(false);
   this->target_time_ += usec;
-  ///delayMicroseconds(usec);
 }
 
 void TuyaRfComponent::space_(uint32_t usec) {
   this->await_target_time_();
-  digitalWrite(CMT2300A_GPIO1_PIN, HIGH);
-  //this->pin_->digital_write(false);
+  this->RemoteTransmitterBase::pin_->digital_write(true);
   this->target_time_ += usec;
-  ///delayMicroseconds(usec);
 }
 
 void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send_wait) {
@@ -130,6 +123,8 @@ void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send
   
   InterruptLock lock;
   
+  this->RemoteTransmitterBase::pin_->digital_write(false);
+  
   int res=StartTx();
   switch(res) {
     case 0:
@@ -146,9 +141,7 @@ void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send
       return;      
   }
   
-  //this->pin_->setup();
-  //this->pin_->pin_mode(gpio::FLAG_OUTPUT);
-  //this->pin_->digital_write(false);
+  this->RemoteTransmitterBase::pin_->digital_write(true);
 
   this->target_time_ = 0;
   //there's an extra delay somewhere, maybe the first call to get_data()
