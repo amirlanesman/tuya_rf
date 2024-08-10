@@ -14,6 +14,8 @@ from esphome.const import (
     CONF_RMT_CHANNEL,
     CONF_VALUE,
 )
+CONF_RECEIVER_DISABLED = "receiver_disabled"
+
 from esphome.core import CORE, TimePeriod
 
 AUTO_LOAD = ["remote_base"]
@@ -81,6 +83,7 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(TuyaRfComponent),
+            cv.Optional(CONF_RECEIVER_DISABLED, default=False): cv.boolean,
             cv.Optional(CONF_DUMP, default=[]): remote_base.validate_dumpers,
             cv.Optional(CONF_TOLERANCE, default="25%"): validate_tolerance,
             cv.Optional(CONF_BUFFER_SIZE, default="1000b"): cv.validate_bytes,
@@ -114,6 +117,7 @@ async def to_code(config):
             config[CONF_TOLERANCE][CONF_VALUE], config[CONF_TOLERANCE][CONF_TYPE]
         )
     )
+    cg.add(var.set_receiver_disabled(config[CONF_RECEIVER_DISABLED]))
     cg.add(var.set_buffer_size(config[CONF_BUFFER_SIZE]))
     cg.add(var.set_filter_us(config[CONF_FILTER]))
     cg.add(var.set_idle_us(config[CONF_IDLE]))

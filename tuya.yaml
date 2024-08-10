@@ -26,6 +26,7 @@ ota:
   password: !secret ota_password
 tuya_rf:
   dump: raw
+  receiver_disabled: true
 button:
   - platform: template
     name:  play/pause

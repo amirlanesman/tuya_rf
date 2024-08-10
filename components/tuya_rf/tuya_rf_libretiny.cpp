@@ -35,6 +35,9 @@ void TuyaRfComponent::setup() {
   //this->pin_->digital_write(false);
   pinMode(CMT2300A_GPIO1_PIN, OUTPUT);
   digitalWrite(CMT2300A_GPIO1_PIN, LOW);
+  if (this->receiver_disabled_) {
+    return;
+  }
   pinMode(CMT2300A_GPIO2_PIN, INPUT);
   
   auto &s = this->store_;
@@ -68,6 +71,10 @@ void TuyaRfComponent::setup() {
 
 void TuyaRfComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "Tuya Rf:");
+  if (this->receiver_disabled_) {
+    ESP_LOGCONFIG(TAG, "  Receiver disabled");
+    return;
+  }
   //LOG_PIN("  Pin: ", this->pin_);
   if (digitalRead(CMT2300A_GPIO2_PIN)==LOW) { //inverted
     ESP_LOGW(TAG, "Remote Receiver Signal starts with a HIGH value. Usually this means you have to "
@@ -165,18 +172,22 @@ void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send
   this->space_(2000);
   this->await_target_time_();
   
-  //Go back to rx mode
-  StartRx();
-  /*
-  if(CMT2300A_GoStby()) {
-    //ESP_LOGD(TAG,"go stby ok");
+  if (this->receiver_disabled_) {
+    if(CMT2300A_GoStby()) {
+      //ESP_LOGD(TAG,"go stby ok");
+    } else {
+      ESP_LOGE(TAG,"go stby error");
+    } 
   } else {
-    ESP_LOGE(TAG,"go stby error");
+    //Go back to rx mode
+    StartRx();
   } 
-  */ 
 }
 
 void TuyaRfComponent::loop() {
+  if (this->receiver_disabled_) {
+    return;
+  }  
   auto &s = this->store_;
 
   // copy write at to local variables, as it's volatile
