@@ -17,4 +17,7 @@ For the time being the transmitting part seems to be working, I got the codes us
 
 The codes have been captured from a ceiling fan remote, the only rf remote I have.
 
-I plan to implement the receiver, but since the CMT2300A cannot do both at the same time, the idea is to leave it always in direct RX mode, switch it to TX mode when needed and switching it back to RX mode when the code has been sent.
+I also implemented the receiver part but it doesn't work:
+the CMT2300A cannot receive and transmit at the same time, the idea is to leave it always in direct RX mode, switch it to TX mode when needed and switching it back to RX mode when the code has been sent.
+Even if I checked on the spi bus that I send the same initialization sequence as tuya does, the
+received data doesn't make sense.
