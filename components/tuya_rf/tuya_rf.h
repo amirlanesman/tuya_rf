@@ -2,7 +2,7 @@
 
 #include "esphome/components/remote_base/remote_base.h"
 #include "esphome/core/component.h"
-
+#include "globals.h"
 #include <vector>
 
 namespace esphome {
@@ -32,7 +32,17 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
                                    public Component
 {
  public:
-  explicit TuyaRfComponent(InternalGPIOPin *tx_pin, InternalGPIOPin *rx_pin) : remote_base::RemoteTransmitterBase(tx_pin), remote_base::RemoteReceiverBase(rx_pin) {}
+  explicit TuyaRfComponent(InternalGPIOPin *sclk_pin, InternalGPIOPin *mosi_pin, InternalGPIOPin *csb_pin, InternalGPIOPin *fcsb_pin,
+     InternalGPIOPin *tx_pin, InternalGPIOPin *rx_pin) : remote_base::RemoteTransmitterBase(tx_pin), remote_base::RemoteReceiverBase(rx_pin) {
+      this->sclk_pin_=sclk_pin;
+      this->mosi_pin_=mosi_pin;
+      this->csb_pin_=csb_pin;
+      this->fcsb_pin_=fcsb_pin;
+      tuya_sclk = this->sclk_pin_->get_pin();
+      tuya_mosi = this->mosi_pin_->get_pin();
+      tuya_csb = this->csb_pin_->get_pin();
+      tuya_fcsb = this->fcsb_pin_->get_pin();
+  }
   void setup() override;
 
   void dump_config() override;
@@ -60,6 +70,11 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
   HighFrequencyLoopRequester high_freq_;
 #endif
 
+  InternalGPIOPin *sclk_pin_;
+  InternalGPIOPin *mosi_pin_;
+  InternalGPIOPin *csb_pin_;
+  InternalGPIOPin *fcsb_pin_;
+  
   bool receiver_disabled_{false};
   uint32_t buffer_size_{};
   uint32_t filter_us_{50};

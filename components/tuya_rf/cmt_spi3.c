@@ -1,5 +1,10 @@
 #include "cmt_spi3.h"
 
+uint8_t tuya_sclk;
+uint8_t tuya_mosi;
+uint8_t tuya_csb;
+uint8_t tuya_fcsb;
+
 /* ************************************************************************/
 
 void cmt_spi3_delay(void)

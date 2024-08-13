@@ -1,42 +1,16 @@
 #ifndef __CMT_SPI3_H
 #define __CMT_SPI3_H
 
-//#include <linux/delay.h>
-//#include <ty_typedefs.h>
 #include "Arduino.h"
-
-/*
-extern void ty_set_gpio1_in(void);
-extern void ty_set_gpio2_in(void);
-extern void ty_set_gpio3_in(void);
-extern int ty_read_gpio1_pin(void);
-extern int ty_read_gpio2_pin(void);
-extern int ty_read_gpio3_pin(void);
-extern void ty_set_csb_out(void);
-extern void ty_set_fcsb_out(void);
-extern void ty_set_sclk_out(void);
-extern void ty_set_sdio_out(void);
-extern void ty_set_sdio_in(void);
-extern void ty_set_csb_h(void);
-extern void ty_set_csb_l(void);
-extern void ty_set_fcsb_h(void);
-extern void ty_set_fcsb_l(void);
-extern void ty_set_sclk_h(void);
-extern void ty_set_sclk_l(void);
-extern void ty_set_sdio_h(void);
-extern void ty_set_sdio_l(void);
-extern int ty_read_sdio_pin(void);
-*/
-/* ************************************************************************
-*  The following need to be modified by user
-*  ************************************************************************ */
+//ugly hack but I don't want to rewrite the whole cmt2300a implementation
+#include "globals.h"
 #define t_nSysTickCount 	millis() //ͬ��ʱ�ӣ��û����Բ��ö���
 
-#define CMT2300A_SPI_SCLK_PIN					PIN_P14
-#define CMT2300A_SPI_MOSI_PIN					PIN_P16
 
-#define CMT2300A_SPI_CSB_PIN					PIN_P6
-#define CMT2300A_SPI_FCSB_PIN					PIN_P26
+#define CMT2300A_SPI_SCLK_PIN					tuya_sclk
+#define CMT2300A_SPI_MOSI_PIN					tuya_mosi
+#define CMT2300A_SPI_CSB_PIN					tuya_csb
+#define CMT2300A_SPI_FCSB_PIN					tuya_fcsb
 
 #define cmt_spi3_csb_out()   pinMode(CMT2300A_SPI_CSB_PIN, OUTPUT)
 #define cmt_spi3_csb_1()	 digitalWrite(CMT2300A_SPI_CSB_PIN,HIGH)

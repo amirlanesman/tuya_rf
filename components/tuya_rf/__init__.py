@@ -20,6 +20,10 @@ CONF_TX_PIN = "tx_pin"
 CONF_START_PULSE_MIN = "start_pulse_min"
 CONF_START_PULSE_MAX = "start_pulse_max"
 CONF_END_PULSE = "end_pulse"
+CONF_SCLK_PIN = "sclk_pin"
+CONF_MOSI_PIN = "mosi_pin"
+CONF_CSB_PIN = "csb_pin"
+CONF_FCSB_PIN = "fcsb_pin"
 
 from esphome.core import CORE, TimePeriod
 
@@ -128,9 +132,13 @@ def validate_pulses(config):
         raise cv.Invalid("end_pulse must be greater than start_pulse_max")
 
 async def to_code(config):
+    sclk_pin = await cg.gpio_pin_expression(config[CONF_SCLK_PIN])
+    mosi_pin = await cg.gpio_pin_expression(config[CONF_MOSI_PIN])
+    csb_pin = await cg.gpio_pin_expression(config[CONF_CSB_PIN])
+    fcsb_pin = await cg.gpio_pin_expression(config[CONF_FCSB_PIN])
     rx_pin = await cg.gpio_pin_expression(config[CONF_RX_PIN])
     tx_pin = await cg.gpio_pin_expression(config[CONF_TX_PIN])
-    var = cg.new_Pvariable(config[CONF_ID],tx_pin,rx_pin)
+    var = cg.new_Pvariable(config[CONF_ID],sclk_pin,mosi_pin,csb_pin,fcsb_pin,tx_pin,rx_pin)
     #await cg.register_component(var, config)
     dumpers = await remote_base.build_dumpers(config[CONF_DUMP])
     for dumper in dumpers:
@@ -149,4 +157,7 @@ async def to_code(config):
     cg.add(var.set_receiver_disabled(config[CONF_RECEIVER_DISABLED]))
     cg.add(var.set_buffer_size(config[CONF_BUFFER_SIZE]))
     cg.add(var.set_filter_us(config[CONF_FILTER]))
-    cg.add(var.set_idle_us(config[CONF_IDLE]))
+    cg.add(var.set_start_pulse_min_us(config[CONF_START_PULSE_MIN]))
+    cg.add(var.set_start_pulse_max_us(config[CONF_START_PULSE_MAX]))
+    cg.add(var.set_end_pulse_us(config[CONF_END_PULSE]))
+    validate_pulses(config)

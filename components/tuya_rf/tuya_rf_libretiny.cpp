@@ -67,6 +67,10 @@ void TuyaRfComponent::setup() {
 
 void TuyaRfComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "Tuya Rf:");
+  LOG_PIN("  Sclk Pin: ",this->sclk_pin_);
+  LOG_PIN("  Mosi Pin: ",this->mosi_pin_);
+  LOG_PIN("  Csb Pin: ",this->csb_pin_);
+  LOG_PIN("  Fcsb Pin: ",this->fcsb_pin_);
   LOG_PIN("  Tx Pin: ",this->RemoteTransmitterBase::pin_);
   if (this->receiver_disabled_) {
     ESP_LOGCONFIG(TAG, "  Receiver disabled");
