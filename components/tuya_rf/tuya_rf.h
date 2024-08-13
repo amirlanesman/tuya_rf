@@ -42,7 +42,9 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
   void set_receiver_disabled(bool receiver_disabled) { this->receiver_disabled_ = receiver_disabled; }
   void set_buffer_size(uint32_t buffer_size) { this->buffer_size_ = buffer_size; }
   void set_filter_us(uint32_t filter_us) { this->filter_us_ = filter_us; }
-  void set_idle_us(uint32_t idle_us) { this->idle_us_ = idle_us; }
+  void set_start_pulse_min_us(uint32_t start_pulse_min_us) { this->start_pulse_min_us_ = start_pulse_min_us; }
+  void set_start_pulse_max_us(uint32_t start_pulse_max_us) { this->start_pulse_max_us_ = start_pulse_max_us; }
+  void set_end_pulse_us(uint32_t end_pulse_us) { this->end_pulse_us_ = end_pulse_us; }
 
  protected:
   void send_internal(uint32_t send_times, uint32_t send_wait) override;
@@ -60,8 +62,14 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
 
   bool receiver_disabled_{false};
   uint32_t buffer_size_{};
-  uint32_t filter_us_{10};
-  uint32_t idle_us_{10000};
+  uint32_t filter_us_{50};
+  uint32_t start_pulse_min_us_{6000};
+  uint32_t start_pulse_max_us_{10000};
+  uint32_t end_pulse_us_{50000};
+
+  bool receive_started_{false};
+  bool receive_end_{false};
+  uint32_t old_write_at_{0};
 };
 
 }  // namespace tuya_rf

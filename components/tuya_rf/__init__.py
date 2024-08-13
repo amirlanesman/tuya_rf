@@ -17,6 +17,9 @@ from esphome.const import (
 CONF_RECEIVER_DISABLED = "receiver_disabled"
 CONF_RX_PIN = "rx_pin"
 CONF_TX_PIN = "tx_pin"
+CONF_START_PULSE_MIN = "start_pulse_min"
+CONF_START_PULSE_MAX = "start_pulse_max"
+CONF_END_PULSE = "end_pulse"
 
 from esphome.core import CORE, TimePeriod
 
@@ -85,6 +88,10 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(TuyaRfComponent),
+            cv.Optional(CONF_SCLK_PIN, default='P14'): cv.All(pins.internal_gpio_output_pin_schema),
+            cv.Optional(CONF_MOSI_PIN, default='P16'): cv.All(pins.internal_gpio_output_pin_schema),
+            cv.Optional(CONF_CSB_PIN, default='P6'): cv.All(pins.internal_gpio_output_pin_schema),
+            cv.Optional(CONF_FCSB_PIN, default='P26'): cv.All(pins.internal_gpio_output_pin_schema),
             cv.Optional(CONF_TX_PIN, default='P20'): cv.All(pins.internal_gpio_output_pin_schema),
             cv.Optional(CONF_RX_PIN, default='P22'): cv.All(pins.internal_gpio_input_pin_schema),
             cv.Optional(CONF_RECEIVER_DISABLED, default=False): cv.boolean,
@@ -95,7 +102,15 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
                 cv.positive_time_period_microseconds,
                 cv.Range(max=TimePeriod(microseconds=4294967295)),
             ),
-            cv.Optional(CONF_IDLE, default="10ms"): cv.All(
+            cv.Optional(CONF_START_PULSE_MIN, default="6000us"): cv.All(
+                cv.positive_time_period_microseconds,
+                cv.Range(max=TimePeriod(microseconds=4294967295)),
+            ),
+            cv.Optional(CONF_START_PULSE_MAX, default="10000us"): cv.All(
+                cv.positive_time_period_microseconds,
+                cv.Range(max=TimePeriod(microseconds=4294967295)),
+            ),
+            cv.Optional(CONF_END_PULSE, default="50ms"): cv.All(
                 cv.positive_time_period_microseconds,
                 cv.Range(max=TimePeriod(microseconds=4294967295)),
             ),
@@ -103,6 +118,14 @@ CONFIG_SCHEMA = remote_base.validate_triggers(
     ).extend(cv.COMPONENT_SCHEMA)
 )
 
+def validate_pulses(config):
+    start_pulse_min=config[CONF_START_PULSE_MIN]
+    start_pulse_max=config[CONF_START_PULSE_MAX]
+    end_pulse=config[CONF_END_PULSE]
+    if start_pulse_max < start_pulse_min:
+        raise cv.Invalid("start_pulse_max must be greater than start_pulse_min")
+    if end_pulse < start_pulse_max:
+        raise cv.Invalid("end_pulse must be greater than start_pulse_max")
 
 async def to_code(config):
     rx_pin = await cg.gpio_pin_expression(config[CONF_RX_PIN])

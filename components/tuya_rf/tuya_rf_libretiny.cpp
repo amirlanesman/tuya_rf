@@ -13,7 +13,7 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
   const uint32_t now = micros();
   // If the lhs is 1 (rising edge) we should write to an uneven index and vice versa
   const uint32_t next = (arg->buffer_write_at + 1) % arg->buffer_size;
-  const bool level = arg->pin.digital_read();
+  const bool level = !arg->pin.digital_read();
   if (level != next % 2)
     return;
 
@@ -54,8 +54,8 @@ void TuyaRfComponent::setup() {
 
   StartRx();
   
-  // First index is a space.
-  if (this->RemoteReceiverBase::pin_->digital_read()) {
+  // First index is a space (signal is inverted)
+  if (!this->RemoteReceiverBase::pin_->digital_read()) {
     s.buffer_write_at = s.buffer_read_at = 1;
   } else {
     s.buffer_write_at = s.buffer_read_at = 0;
@@ -73,15 +73,18 @@ void TuyaRfComponent::dump_config() {
     return;
   }
   LOG_PIN("  Rx Pin: ", this->RemoteReceiverBase::pin_);
-  if (this->RemoteReceiverBase::pin_->digital_read()) {
+  //probably the warning isn't usefule due to the noisy signal
+  if (!this->RemoteReceiverBase::pin_->digital_read()) {
     ESP_LOGW(TAG, "Remote Receiver Signal starts with a HIGH value. Usually this means you have to "
                   "invert the signal using 'inverted: True' in the pin schema!");
+    ESP_LOGW(TAG, "It could also be that the signal is noisy.");
   }
   ESP_LOGCONFIG(TAG, "  Buffer Size: %u", this->buffer_size_);
   ESP_LOGCONFIG(TAG, "  Tolerance: %u%s", this->tolerance_,
                 (this->tolerance_mode_ == remote_base::TOLERANCE_MODE_TIME) ? " us" : "%");
   ESP_LOGCONFIG(TAG, "  Filter out pulses shorter than: %u us", this->filter_us_);
-  ESP_LOGCONFIG(TAG, "  Signal is done after %u us of no changes", this->idle_us_);
+  ESP_LOGCONFIG(TAG, "  Signal start with a pulse between %u and %u us", this->start_pulse_min_us_, this->start_pulse_max_us_);
+  ESP_LOGCONFIG(TAG, "  Signal is done after a pulse of %u us", this->end_pulse_us_);
 }
 
 void TuyaRfComponent::await_target_time_() {
@@ -177,6 +180,20 @@ void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send
   } 
 }
 
+/*
+The rf input is quite noisy, so some heavy filtering must be done:
+
+  - the signal is inverted (the pin gives 0 for mark, 1 for
+    space, with the inversion the space is 0 and pulse is 1).
+
+  - the starting pulse must be more than a specified duration
+    (start_pulse_min_us_) but less than start_pulse_max_us_
+    The default values work with my remote, I don't know if 
+    they are valid for other remotes.
+
+  - the cmt2300a gives a very long pulse (90ms) at the end of a
+    reception, the parameter to detect it is end_pulse_us_.
+*/
 void TuyaRfComponent::loop() {
   if (this->receiver_disabled_) {
     return;
@@ -186,33 +203,102 @@ void TuyaRfComponent::loop() {
   // copy write at to local variables, as it's volatile
   const uint32_t write_at = s.buffer_write_at;
   const uint32_t dist = (s.buffer_size + write_at - s.buffer_read_at) % s.buffer_size;
+
   // signals must at least one rising and one leading edge
   if (dist <= 1)
     return;
-  const uint32_t now = micros();
-  if (now - s.buffer[write_at] < this->idle_us_) {
-    // The last change was fewer than the configured idle time ago.
+
+  //stop the reception if the end pulse never arrives
+  if (receive_started_ && dist >= s.buffer_size - 5) {
+    ESP_LOGD(TAG,"Buffer overflow, restarting reception");
+    receive_started_=false;
+    receive_end_=false;
+    #if 0
+    uint32_t prev = s.buffer_read_at;
+    s.buffer_read_at = (s.buffer_read_at + 1) % s.buffer_size;
+    int32_t multiplier = s.buffer_read_at % 2 == 0 ? 1 : -1;
+    for (uint32_t i = 0; prev != write_at; i++) {
+      int32_t delta = s.buffer[s.buffer_read_at] - s.buffer[prev];
+
+      ESP_LOGD(TAG, "  i=%u buffer[%u]=%u - buffer[%u]=%u -> %d", i, s.buffer_read_at, s.buffer[s.buffer_read_at], prev,
+                s.buffer[prev], delta * multiplier);
+      prev = s.buffer_read_at;
+      s.buffer_read_at = (s.buffer_read_at + 1) % s.buffer_size;
+      multiplier *= -1;
+    }
+    #endif
+    s.buffer_read_at = s.buffer_write_at;
+    old_write_at_ = s.buffer_read_at;
     return;
   }
 
-  ESP_LOGVV(TAG, "read_at=%u write_at=%u dist=%u now=%u end=%u", s.buffer_read_at, write_at, dist, now,
-            s.buffer[write_at]);
+  //now we check all the available data in the buffer from the old position read
+  uint32_t new_write_at = old_write_at_;
+  while (new_write_at != write_at) {
+    uint32_t prev;
+    if (new_write_at==0) {
+      prev=s.buffer_size-1;
+    } else {
+      prev=new_write_at-1;
+    }
+    uint32_t diff=s.buffer[new_write_at]-s.buffer[prev];
+    //reception starts and ends with a pulse (transition to low, new value is 0)
+    if (new_write_at % 2 == 0) {
+      //check if it's a start or end pulse
+      if (diff>=this->start_pulse_min_us_) {
+        if (diff >= this->end_pulse_us_) {
+          //it's a probable end pulse
+          if (receive_started_) {
+            receive_end_=true;
+            new_write_at=prev;
+            break;
+          } else {
+            ESP_LOGD(TAG, "Ignoring too long pulse %u",diff);
+          }
+        } else if (diff<this->start_pulse_max_us_) {
+          //it's a new start pulse, discard old data and start again
+          ESP_LOGD(TAG, "Long pulse %u, start reception",diff);
+          s.buffer_read_at=prev;
+          receive_started_=true;
+          receive_end_=false;
+        } else {
+          ESP_LOGD(TAG, "Ignoring too long pulse (2) %u",diff);
+        }
+      }
+    } else if (receive_started_ && diff>=this->start_pulse_min_us_) {
+      //pauses can never be longer than the start pulse
+      ESP_LOGD(TAG, "Long pause (%u) during reception, restarting",diff);
+      receive_started_=false;
+    }
+    if (!receive_started_) {
+      s.buffer_read_at=prev;
+    }
+    new_write_at = (new_write_at + 1) % s.buffer_size;
+  }
+  old_write_at_ = new_write_at;
 
-  // Skip first value, it's from the previous idle level
-  s.buffer_read_at = (s.buffer_read_at + 1) % s.buffer_size;
+  if (!receive_end_) {
+    return;
+  }
+
+  //here we have a supposedly valid sequence
+  const uint32_t now = micros();
+
+  receive_started_=false;
+  receive_end_=false;
+
+  ESP_LOGD(TAG, "read_at=%u write_at=%u dist=%u now=%u end=%u", s.buffer_read_at, new_write_at, dist, now,
+            s.buffer[new_write_at]);
+
   uint32_t prev = s.buffer_read_at;
   s.buffer_read_at = (s.buffer_read_at + 1) % s.buffer_size;
-  const uint32_t reserve_size = 1 + (s.buffer_size + write_at - s.buffer_read_at) % s.buffer_size;
+  const uint32_t reserve_size = 1 + (s.buffer_size + new_write_at - s.buffer_read_at) % s.buffer_size;
   this->RemoteReceiverBase::temp_.clear();
   this->RemoteReceiverBase::temp_.reserve(reserve_size);
   int32_t multiplier = s.buffer_read_at % 2 == 0 ? 1 : -1;
 
-  for (uint32_t i = 0; prev != write_at; i++) {
+  for (uint32_t i = 0; prev != new_write_at; i++) {
     int32_t delta = s.buffer[s.buffer_read_at] - s.buffer[prev];
-    if (uint32_t(delta) >= this->idle_us_) {
-      // already found a space longer than idle. There must have been two pulses
-      break;
-    }
 
     ESP_LOGVV(TAG, "  i=%u buffer[%u]=%u - buffer[%u]=%u -> %d", i, s.buffer_read_at, s.buffer[s.buffer_read_at], prev,
               s.buffer[prev], multiplier * delta);
@@ -222,7 +308,7 @@ void TuyaRfComponent::loop() {
     multiplier *= -1;
   }
   s.buffer_read_at = (s.buffer_size + s.buffer_read_at - 1) % s.buffer_size;
-  this->RemoteReceiverBase::temp_.push_back(this->idle_us_ * multiplier);
+  this->RemoteReceiverBase::temp_.push_back(this->end_pulse_us_ * multiplier);
 
   this->call_listeners_dumpers_();
 }
