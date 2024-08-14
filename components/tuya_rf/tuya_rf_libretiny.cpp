@@ -214,7 +214,7 @@ void TuyaRfComponent::loop() {
 
   //stop the reception if the end pulse never arrives
   if (receive_started_ && dist >= s.buffer_size - 5) {
-    ESP_LOGD(TAG,"Buffer overflow, restarting reception");
+    ESP_LOGVV(TAG,"Buffer overflow, restarting reception");
     receive_started_=false;
     receive_end_=false;
     #if 0
@@ -224,7 +224,7 @@ void TuyaRfComponent::loop() {
     for (uint32_t i = 0; prev != write_at; i++) {
       int32_t delta = s.buffer[s.buffer_read_at] - s.buffer[prev];
 
-      ESP_LOGD(TAG, "  i=%u buffer[%u]=%u - buffer[%u]=%u -> %d", i, s.buffer_read_at, s.buffer[s.buffer_read_at], prev,
+      ESP_LOGVV(TAG, "  i=%u buffer[%u]=%u - buffer[%u]=%u -> %d", i, s.buffer_read_at, s.buffer[s.buffer_read_at], prev,
                 s.buffer[prev], delta * multiplier);
       prev = s.buffer_read_at;
       s.buffer_read_at = (s.buffer_read_at + 1) % s.buffer_size;
@@ -257,21 +257,21 @@ void TuyaRfComponent::loop() {
             new_write_at=prev;
             break;
           } else {
-            ESP_LOGD(TAG, "Not receiving, ignoring ending pulse (%u)",diff);
+            ESP_LOGVV(TAG, "Not receiving, ignoring ending pulse (%u)",diff);
           }
         } else if (diff<this->start_pulse_max_us_) {
           //it's a new start pulse, discard old data and start again
-          ESP_LOGD(TAG, "Long pulse (%u), start reception",diff);
+          ESP_LOGVV(TAG, "Long pulse (%u), start reception",diff);
           s.buffer_read_at=prev;
           receive_started_=true;
           receive_end_=false;
         } else {
-          ESP_LOGD(TAG, "Starting pulse (%u) too long, ignored",diff);
+          ESP_LOGVV(TAG, "Starting pulse (%u) too long, ignored",diff);
         }
       }
     } else if (receive_started_ && diff>=this->start_pulse_min_us_) {
       //pauses can never be longer than the start pulse
-      ESP_LOGD(TAG, "Long pause (%u) during reception, restarting",diff);
+      ESP_LOGVV(TAG, "Long pause (%u) during reception, restarting",diff);
       receive_started_=false;
     }
     if (!receive_started_) {
@@ -291,7 +291,7 @@ void TuyaRfComponent::loop() {
   receive_started_=false;
   receive_end_=false;
 
-  ESP_LOGD(TAG, "read_at=%u write_at=%u dist=%u now=%u end=%u", s.buffer_read_at, new_write_at, dist, now,
+  ESP_LOGVV(TAG, "read_at=%u write_at=%u dist=%u now=%u end=%u", s.buffer_read_at, new_write_at, dist, now,
             s.buffer[new_write_at]);
 
   uint32_t prev = s.buffer_read_at;
