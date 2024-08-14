@@ -77,7 +77,7 @@ void TuyaRfComponent::dump_config() {
     return;
   }
   LOG_PIN("  Rx Pin: ", this->RemoteReceiverBase::pin_);
-  //probably the warning isn't usefule due to the noisy signal
+  //probably the warning isn't useful due to the noisy signal
   if (!this->RemoteReceiverBase::pin_->digital_read()) {
     ESP_LOGW(TAG, "Remote Receiver Signal starts with a HIGH value. Usually this means you have to "
                   "invert the signal using 'inverted: True' in the pin schema!");
@@ -257,16 +257,16 @@ void TuyaRfComponent::loop() {
             new_write_at=prev;
             break;
           } else {
-            ESP_LOGD(TAG, "Ignoring too long pulse %u",diff);
+            ESP_LOGD(TAG, "Not receiving, ignoring ending pulse (%u)",diff);
           }
         } else if (diff<this->start_pulse_max_us_) {
           //it's a new start pulse, discard old data and start again
-          ESP_LOGD(TAG, "Long pulse %u, start reception",diff);
+          ESP_LOGD(TAG, "Long pulse (%u), start reception",diff);
           s.buffer_read_at=prev;
           receive_started_=true;
           receive_end_=false;
         } else {
-          ESP_LOGD(TAG, "Ignoring too long pulse (2) %u",diff);
+          ESP_LOGD(TAG, "Starting pulse (%u) too long, ignored",diff);
         }
       }
     } else if (receive_started_ && diff>=this->start_pulse_min_us_) {
