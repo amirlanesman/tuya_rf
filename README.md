@@ -11,7 +11,7 @@ There are several devices using the same CBU/SH4 combo.
 
 My code is based on the remote_receiver/remote_transmitter components, adding the initialization sequence to put the CMT2300A in direct RX or TX mode.
 
-The transmitter works, I got the codes using the original firmware and the tinytuya [RFRemoteControlDevice.py](https://github.com/jasonacox/tinytuya/blob/master/tinytuya/Contrib/RFRemoteControlDevice.py), the gencodes.py script uses the data to generate `the remote_transmitter.transmit_raw` codes.
+The transmitter works, I got the codes using the original firmware and the tinytuya [RFRemoteControlDevice.py](https://github.com/jasonacox/tinytuya/blob/master/tinytuya/Contrib/RFRemoteControlDevice.py), the gencodes.py script uses the data to generate the `remote_transmitter.transmit_raw` codes.
 
 The codes have been captured from a ceiling fan remote, the only rf remote I have.
 
