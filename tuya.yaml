@@ -24,133 +24,214 @@ api:
 ota:
   platform: esphome
   password: !secret ota_password
+
+#status led
+output:
+  platform: gpio
+  id: status
+  pin: P9
+
+#reset button, it has an external pull-down in my board
+binary_sensor:
+  - platform: gpio
+    id: reset_button
+    pin: P23
+
+#rf transmitter and receiver
 tuya_rf:
+  id: rf
+  receiver_disabled: false
   dump: raw
-  receiver_disabled: true
+
+#for the ir leds
+remote_transmitter:
+  id: ir
+  pin: P7
+  carrier_duty_percent: 50%
+
+#for the ir receiver
+remote_receiver:
+  pin:
+   number: P8
+   inverted: true
+  dump: nec
+
+
 button:
+  - platform: template
+    name: irtest
+    web_server_sorting_weight: 1000
+    on_press:
+       - remote_transmitter.transmit_nec:
+          transmitter_id: ir
+          address: 0xFA05
+          command: 0xEB14
+          command_repeats: 1
   - platform: template
     name:  play/pause
     web_server_sorting_weight:  10
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6042,-1106,391,-1106,391,-391,1106,-333,1106,-391,1106,-391,1106,-333,1106,-391,1106,-391,1106,-1106,391,-1106,391,-391,1106,-1106,391,-1106,391,-391,1106,-1106,391,-391,1106,-1106,391,-391,1106,-1106,391,-1106,391,-1106,391,-391,1106,-391,1106,-1106,391,-391,1106,-391,1106,-391,1106,-1106,333,-1106]
+       - output.turn_off: status
   - platform: template
     name:  1
     web_server_sorting_weight:  20
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6750,-1106,391,-1106,391,-391,1106,-391,1106,-391,1106,-391,1106,-391,1106,-391,1106,-391,1106,-1106,332,-1106,391,-391,1106,-1106,391,-1106,391,-391,1106,-1106,391,-391,1106,-1106,332,-391,1106,-1106,391,-1106,391,-1106,391,-1106,391,-1106,391,-391,1106,-1106,391,-391,1106,-391,1106,-391,1106,-391]
+       - output.turn_off: status
   - platform: template
     name:  2
     web_server_sorting_weight:  30
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6013,-1093,387,-1093,341,-387,1093,-387,1093,-387,1128,-341,1128,-387,1093,-387,1093,-387,1128,-1093,387,-1093,387,-387,1093,-1093,387,-1093,387,-387,1128,-1093,387,-387,1128,-1093,387,-387,1093,-1128,387,-1093,387,-1093,387,-1093,387,-387,1093,-387,1128,-1093,387,-387,1093,-387,1093,-387,1093,-1093]
+       - output.turn_off: status
   - platform: template
     name:  3
     web_server_sorting_weight:  40
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6803,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-379,1105,-1105,379,-379]
+       - output.turn_off: status
   - platform: template
     name:  4
     web_server_sorting_weight:  50
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6005,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-1105,379,-379,1105,-379,1105,-1105,379,-1105]
+       - output.turn_off: status
   - platform: template
     name:  5
     web_server_sorting_weight:  60
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6816,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-379]
+       - output.turn_off: status
   - platform: template
     name:  6
     web_server_sorting_weight:  70
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [5933,-1104,379,-1104,379,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-1104]
+       - output.turn_off: status
   - platform: template
     name:  random
     web_server_sorting_weight:  80
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6046,-1103,380,-1103,380,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-380,1103,-380,1103,-380,1103,-1103,380,-380,1103,-1103,380,-1103,380,-1103]
+       - output.turn_off: status
   - platform: template
     name:  invert
     web_server_sorting_weight:  90
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6728,-1105,333,-1105,388,-388,1105,-388,1105,-388,1105,-388,1105,-388,1105,-388,1105,-388,1105,-1105,388,-1105,388,-388,1105,-1105,388,-1105,388,-388,1105,-1105,388,-388,1105,-1105,388,-388,1105,-1105,388,-1105,388,-388,1105,-388,1105,-1105,333,-388,1105,-1105,388,-388,1105,-1105,388,-1105,388,-333]
+       - output.turn_off: status
   - platform: template
     name:  1h
     web_server_sorting_weight:  100
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6068,-1106,390,-1106,390,-390,1106,-390,1106,-390,1106,-390,1106,-390,1106,-390,1106,-390,1106,-1106,390,-1106,332,-390,1106,-1106,332,-1106,390,-390,1106,-1106,390,-390,1106,-1106,332,-390,1106,-1106,390,-332,1106,-1106,390,-390,1106,-390,1106,-1106,390,-390,1106,-1106,332,-390,1106,-1106,390,-1106]
+       - output.turn_off: status
   - platform: template
     name:  2h
     web_server_sorting_weight:  110
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6698,-1108,392,-1108,392,-392,1108,-392,1108,-392,1108,-392,1108,-331,1108,-392,1108,-392,1108,-1108,392,-1108,331,-392,1108,-1108,392,-1108,392,-392,1108,-1108,392,-392,1108,-1108,392,-392,1108,-1108,392,-392,1108,-392,1108,-392,1108,-1108,392,-1108,392,-392,1108,-1108,392,-1108,392,-1108,392,-331]
+       - output.turn_off: status
   - platform: template
     name:  4h
     web_server_sorting_weight:  120
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6713,-1103,380,-1103,380,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-380,1103,-1103,380,-380,1103,-380,1103,-1103,380,-1103,380,-1103,380,-380,1103,-1103,380,-1103,380,-380,1103,-380]
+       - output.turn_off: status
   - platform: template
     name:  8h
     web_server_sorting_weight:  130
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6041,-1104,379,-1104,379,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-1104,379,-379,1104,-1104,379,-379,1104,-1104,379,-379,1104,-379,1104,-1104,379,-379,1104,-1104]
+       - output.turn_off: status
   - platform: template
     name:  luz
     web_server_sorting_weight:  140
     on_press:
+       - output.turn_on: status
        - remote_transmitter.transmit_raw:
-          repeat: 
+          transmitter_id: rf
+          repeat:
             times: 7
             wait_time: 0s
           code: [6756,-1105,379,-1105,379,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-1105,379,-379,1105,-1105,379,-379,1105,-1105,379,-379]
+       - output.turn_off: status

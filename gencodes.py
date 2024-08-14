@@ -21,11 +21,11 @@ buttons={
 
 rf=RFRemoteControlDevice.RFRemoteControlDevice
 #c code
-for b in buttons:
-   x=rf.rf_print_button(buttons[b])
-   pulses=rf.base64_to_pulses(eval(x)['data0'])
-   print(b+","+",".join([str(p) for p in pulses]))
-
+#for b in buttons:
+#   x=rf.rf_print_button(buttons[b])
+#   pulses=rf.base64_to_pulses(eval(x)['data0'])
+#   print(b+","+",".join([str(p) for p in pulses]))
+#
 
 #esphome yaml
 print("button:")
@@ -38,10 +38,16 @@ for b in buttons:
   print("    web_server_sorting_weight: ",w)
   w=w+10
   print("    on_press:")
+  print("       - output.turn_on: status")
   print("       - remote_transmitter.transmit_raw:")
+  print("          transmitter_id: rf")
+  print("          repeat:")
+  print("            times: 7")
+  print("            wait_time: 0s")
   pp=[]
   mult=1
   for i in range(len(pulses)):
     pp.append(str(pulses[i]*mult))
     mult=-mult
   print("          code: ["+",".join(pp)+"]")
+  print("       - output.turn_off: status")
