@@ -83,7 +83,6 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
   uint32_t end_pulse_us_{50000};
 
   bool receive_started_{false};
-  bool receive_end_{false};
   uint32_t old_write_at_{0};
 };
 

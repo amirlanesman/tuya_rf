@@ -212,11 +212,12 @@ void TuyaRfComponent::loop() {
   if (dist <= 1)
     return;
 
+  bool receive_end = false;
+
   //stop the reception if the end pulse never arrives
   if (receive_started_ && dist >= s.buffer_size - 5) {
     ESP_LOGVV(TAG,"Buffer overflow, restarting reception");
     receive_started_=false;
-    receive_end_=false;
     #if 0
     uint32_t prev = s.buffer_read_at;
     s.buffer_read_at = (s.buffer_read_at + 1) % s.buffer_size;
@@ -253,7 +254,7 @@ void TuyaRfComponent::loop() {
         if (diff >= this->end_pulse_us_) {
           //it's a probable end pulse
           if (receive_started_) {
-            receive_end_=true;
+            receive_end=true;
             new_write_at=prev;
             break;
           } else {
@@ -264,7 +265,6 @@ void TuyaRfComponent::loop() {
           ESP_LOGVV(TAG, "Long pulse (%u), start reception",diff);
           s.buffer_read_at=prev;
           receive_started_=true;
-          receive_end_=false;
         } else {
           ESP_LOGVV(TAG, "Starting pulse (%u) too long, ignored",diff);
         }
@@ -281,7 +281,7 @@ void TuyaRfComponent::loop() {
   }
   old_write_at_ = new_write_at;
 
-  if (!receive_end_) {
+  if (!receive_end) {
     return;
   }
 
@@ -289,7 +289,6 @@ void TuyaRfComponent::loop() {
   const uint32_t now = micros();
 
   receive_started_=false;
-  receive_end_=false;
 
   ESP_LOGVV(TAG, "read_at=%u write_at=%u dist=%u now=%u end=%u", s.buffer_read_at, new_write_at, dist, now,
             s.buffer[new_write_at]);
