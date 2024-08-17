@@ -55,6 +55,8 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
   void set_start_pulse_min_us(uint32_t start_pulse_min_us) { this->start_pulse_min_us_ = start_pulse_min_us; }
   void set_start_pulse_max_us(uint32_t start_pulse_max_us) { this->start_pulse_max_us_ = start_pulse_max_us; }
   void set_end_pulse_us(uint32_t end_pulse_us) { this->end_pulse_us_ = end_pulse_us; }
+  void turn_on_receiver();
+  void turn_off_receiver();
 
  protected:
   void send_internal(uint32_t send_times, uint32_t send_wait) override;
@@ -64,6 +66,7 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
   void space_(uint32_t usec);
 
   void await_target_time_();
+  void set_receiver(bool on);
   uint32_t target_time_;
 #if defined(USE_LIBRETINY)
   RemoteReceiverComponentStore store_;
@@ -82,6 +85,7 @@ class TuyaRfComponent : public remote_base::RemoteTransmitterBase,
   uint32_t start_pulse_max_us_{10000};
   uint32_t end_pulse_us_{50000};
 
+  bool transmitting_{false};
   bool receive_started_{false};
   uint32_t old_write_at_{0};
 };

@@ -1,5 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
+from esphome import automation
 from esphome import pins
 from esphome.components import remote_base
 from esphome.const import (
@@ -24,6 +25,7 @@ CONF_SCLK_PIN = "sclk_pin"
 CONF_MOSI_PIN = "mosi_pin"
 CONF_CSB_PIN = "csb_pin"
 CONF_FCSB_PIN = "fcsb_pin"
+CONF_RECEIVER_ID = "receiver_id"
 
 from esphome.core import CORE, TimePeriod
 
@@ -65,6 +67,26 @@ TuyaRfComponent = tuya_rf_ns.class_(
     "TuyaRfComponent", remote_base.RemoteTransmitterBase, cg.Component
 )
 
+TurnOffReceiverAction = tuya_rf_ns.class_("TurnOffReceiverAction", automation.Action)
+TurnOnReceiverAction = tuya_rf_ns.class_("TurnOnReceiverAction", automation.Action)
+
+TUYA_RF_ACTION_SCHEMA = cv.Schema(
+    {
+        cv.GenerateID(CONF_RECEIVER_ID): cv.use_id(TuyaRfComponent),
+    }
+)
+
+@automation.register_action("tuya_rf.turn_on_receiver", TurnOnReceiverAction, TUYA_RF_ACTION_SCHEMA)
+async def tuya_rf_turn_on_receiver_to_code(config, action_id, template_arg, args):
+    paren = await cg.get_variable(config[CONF_RECEIVER_ID])
+    return cg.new_Pvariable(action_id, template_arg, paren)
+
+@automation.register_action("tuya_rf.turn_off_receiver", TurnOffReceiverAction, TUYA_RF_ACTION_SCHEMA)
+async def tuya_rf_turn_off_receiver_to_code(config, action_id, template_arg, args):
+    paren = await cg.get_variable(config[CONF_RECEIVER_ID])
+    return cg.new_Pvariable(action_id, template_arg, paren)
+
+
 def validate_tolerance(value):
     if isinstance(value, dict):
         return TOLERANCE_SCHEMA(value)
@@ -87,7 +109,9 @@ def validate_tolerance(value):
         }
     )
 
-
+#MULTI_CONF will be possible once the cmt2300a code is refactored
+#to use different spi pins for each instance
+#MULTI_CONF = True
 CONFIG_SCHEMA = remote_base.validate_triggers(
     cv.Schema(
         {

@@ -14,6 +14,8 @@ My code is based on the remote_receiver/remote_transmitter components, adding th
 The transmitter works, I got the codes using the original firmware and the tinytuya [RFRemoteControlDevice.py](https://github.com/jasonacox/tinytuya/blob/master/tinytuya/Contrib/RFRemoteControlDevice.py), the gencodes.py script uses the data to generate the `remote_transmitter.transmit_raw` codes.
 
 The codes have been captured from a ceiling fan remote, the only rf remote I have.
+I also used the codes dumped from the receiver to confirm that they also
+work.
 
 The receiver (both ir using the standard remote_receiver and rf using this component) should work once this [pull request](https://github.com/libretiny-eu/libretiny/pull/290) lands in libretiny.
 
@@ -50,3 +52,14 @@ You can use the same configuration variables of the [remote_transmitter](https:/
 |mosi_pin|P16|the bidirectional data pin of the spi communication. Only the number of the pin is used, the remaining parameters of the pin schema are ignored|
 |csb_pin|P6|spi chip select pin to read/write registers. Only the number of the pin is used, the remaining parameters of the pin schema are ignored|
 |fcsb_pin|P26|spi chip select pin to read/write the fifo. It is not used|
+
+## actions
+
+Since the receiver is mostly useful to learn new buttons, it's better to
+leave it off and turn it on only when you want to start learning.
+There are two actions, `tuya_rf.turn_on_receiver` (to turn the receiver on)
+and `tuya_rf.turn_off_receiver` (to turn it off).
+Once the code is fixed to work with multiple instances of tuya_rf (currently
+it only allows one instance) you shuould specify the `receiver_id` in the
+action.
+

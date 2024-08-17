@@ -29,12 +29,62 @@ void IRAM_ATTR HOT RemoteReceiverComponentStore::gpio_intr(RemoteReceiverCompone
   arg->buffer[arg->buffer_write_at = next] = now;
 }
 
+void TuyaRfComponent::turn_on_receiver() {
+  if (this->receiver_disabled_) {
+    this->receiver_disabled_=false;
+    this->set_receiver(true);
+   } else {
+     ESP_LOGD(TAG,"receiver already active");
+   }
+}
+
+void TuyaRfComponent::turn_off_receiver() {
+  if (!this->receiver_disabled_) {
+    this->receiver_disabled_=true;
+    this->set_receiver(false);
+   } else {
+     ESP_LOGD(TAG,"receiver already disabled");
+   }
+}
+
+void TuyaRfComponent::set_receiver(bool on) {
+  if (on) {
+    ESP_LOGD(TAG, "starting receiver");
+    auto &s = this->store_;
+    if (s.buffer==NULL) {
+      ESP_LOGD(TAG,"first time starting the receiver, allocating buffer");
+      s.buffer = new uint32_t[s.buffer_size];
+      void *buf = (void *) s.buffer;
+      memset(buf, 0, s.buffer_size * sizeof(uint32_t));
+    }
+    // First index is a space (signal is inverted)
+    if (!this->RemoteReceiverBase::pin_->digital_read()) {
+      s.buffer_write_at = s.buffer_read_at = 1;
+    } else {
+      s.buffer_write_at = s.buffer_read_at = 0;
+    }
+    this->RemoteReceiverBase::pin_->attach_interrupt(RemoteReceiverComponentStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
+    this->high_freq_.start();
+    if (!this->transmitting_) {
+      StartRx();
+    }
+  } else {
+    ESP_LOGD(TAG, "stopping receiver");
+    if (!this->transmitting_) {
+      if(CMT2300A_GoStby()) {
+        //ESP_LOGD(TAG,"go stby ok");
+      } else {
+        ESP_LOGE(TAG,"go stby error");
+      }
+    }
+    this->RemoteReceiverBase::pin_->detach_interrupt();
+    this->high_freq_.stop();
+  }
+}
+
 void TuyaRfComponent::setup() {
   this->RemoteTransmitterBase::pin_->setup();
   this->RemoteTransmitterBase::pin_->digital_write(false);
-  if (this->receiver_disabled_) {
-    return;
-  }
   this->RemoteReceiverBase::pin_->setup();
   
   auto &s = this->store_;
@@ -42,27 +92,13 @@ void TuyaRfComponent::setup() {
   s.pin = this->RemoteReceiverBase::pin_->to_isr();
   s.buffer_size = this->buffer_size_;
 
-  this->high_freq_.start();
   if (s.buffer_size % 2 != 0) {
     // Make sure divisible by two. This way, we know that every 0bxxx0 index is a space and every 0bxxx1 index is a mark
     s.buffer_size++;
   }
+  //the buffer will be allocated the first time the receiver is enabled
 
-  s.buffer = new uint32_t[s.buffer_size];
-  void *buf = (void *) s.buffer;
-  memset(buf, 0, s.buffer_size * sizeof(uint32_t));
-
-  StartRx();
-  
-  // First index is a space (signal is inverted)
-  if (!this->RemoteReceiverBase::pin_->digital_read()) {
-    s.buffer_write_at = s.buffer_read_at = 1;
-  } else {
-    s.buffer_write_at = s.buffer_read_at = 0;
-  }
-  
-  this->RemoteReceiverBase::pin_->attach_interrupt(RemoteReceiverComponentStore::gpio_intr, &this->store_, gpio::INTERRUPT_ANY_EDGE);
-  
+  this->set_receiver(!this->receiver_disabled_);
 }
 
 void TuyaRfComponent::dump_config() {
@@ -72,10 +108,6 @@ void TuyaRfComponent::dump_config() {
   LOG_PIN("  Csb Pin: ",this->csb_pin_);
   LOG_PIN("  Fcsb Pin: ",this->fcsb_pin_);
   LOG_PIN("  Tx Pin: ",this->RemoteTransmitterBase::pin_);
-  if (this->receiver_disabled_) {
-    ESP_LOGCONFIG(TAG, "  Receiver disabled");
-    return;
-  }
   LOG_PIN("  Rx Pin: ", this->RemoteReceiverBase::pin_);
   //probably the warning isn't useful due to the noisy signal
   if (!this->RemoteReceiverBase::pin_->digital_read()) {
@@ -89,6 +121,11 @@ void TuyaRfComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Filter out pulses shorter than: %u us", this->filter_us_);
   ESP_LOGCONFIG(TAG, "  Signal start with a pulse between %u and %u us", this->start_pulse_min_us_, this->start_pulse_max_us_);
   ESP_LOGCONFIG(TAG, "  Signal is done after a pulse of %u us", this->end_pulse_us_);
+  if (this->receiver_disabled_) {
+    ESP_LOGCONFIG(TAG, "  Receiver disabled");
+  } else {
+    ESP_LOGCONFIG(TAG, "  Receiver enabled");
+  }
 }
 
 void TuyaRfComponent::await_target_time_() {
@@ -130,8 +167,9 @@ void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send
   
   InterruptLock lock;
   
+  this->transmitting_=true;
   this->RemoteTransmitterBase::pin_->digital_write(false);
-  
+
   int res=StartTx();
   switch(res) {
     case 0:
@@ -139,12 +177,15 @@ void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send
       break;
     case 1:
       ESP_LOGE(TAG,"Error Rf_Init");
+      this->transmitting_=false;
       return;
     case 2:
       ESP_LOGE(TAG,"Error go tx");
+      this->transmitting_=false;
       return;
     default:
       ESP_LOGE(TAG,"Unknown error %d",res);
+      this->transmitting_=false;
       return;      
   }
   
@@ -172,6 +213,7 @@ void IRAM_ATTR TuyaRfComponent::send_internal(uint32_t send_times, uint32_t send
   this->space_(2000);
   this->await_target_time_();
   
+  this->transmitting_=false;
   if (this->receiver_disabled_) {
     if(CMT2300A_GoStby()) {
       //ESP_LOGD(TAG,"go stby ok");
