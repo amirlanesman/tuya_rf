@@ -58,9 +58,12 @@ remote_receiver:
 
 
 button:
+  - platform: restart
+    name: "restart"
   - platform: template
     name: irtest
-    web_server_sorting_weight: 1000
+    web_server:
+        sorting_weight: 1000
     on_press:
        - remote_transmitter.transmit_nec:
           transmitter_id: ir
@@ -69,17 +72,20 @@ button:
           command_repeats: 1
   - platform: template
     name: turn off receiver
-    web_server_sorting_weight: 1010
+    web_server:
+        sorting_weight: 1010
     on_press:
        - tuya_rf.turn_off_receiver:
   - platform: template
     name: turn on receiver
-    web_server_sorting_weight: 1020
+    web_server:
+        sorting_weight: 1020
     on_press:
        - tuya_rf.turn_on_receiver:
   - platform: template
     name:  play/pause
-    web_server_sorting_weight:  10
+    web_server:
+        sorting_weight:  10
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -93,7 +99,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  1
-    web_server_sorting_weight:  20
+    web_server:
+        sorting_weight:  20
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -107,7 +114,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  2
-    web_server_sorting_weight:  30
+    web_server:
+        sorting_weight:  30
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -121,7 +129,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  3
-    web_server_sorting_weight:  40
+    web_server:
+        sorting_weight:  40
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -135,7 +144,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  4
-    web_server_sorting_weight:  50
+    web_server:
+        sorting_weight:  50
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -149,7 +159,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  5
-    web_server_sorting_weight:  60
+    web_server:
+        sorting_weight:  60
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -163,7 +174,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  6
-    web_server_sorting_weight:  70
+    web_server:
+        sorting_weight:  70
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -177,7 +189,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  random
-    web_server_sorting_weight:  80
+    web_server:
+        sorting_weight:  80
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -189,7 +202,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  invert
-    web_server_sorting_weight:  90
+    web_server:
+        sorting_weight:  90
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -201,7 +215,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  1h
-    web_server_sorting_weight:  100
+    web_server:
+        sorting_weight:  100
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -213,7 +228,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  2h
-    web_server_sorting_weight:  110
+    web_server:
+        sorting_weight:  110
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -225,7 +241,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  4h
-    web_server_sorting_weight:  120
+    web_server:
+        sorting_weight:  120
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -237,7 +254,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  8h
-    web_server_sorting_weight:  130
+    web_server:
+        sorting_weight:  130
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
@@ -249,7 +267,8 @@ button:
        - output.turn_off: status
   - platform: template
     name:  luz
-    web_server_sorting_weight:  140
+    web_server:
+        sorting_weight:  140
     on_press:
        - output.turn_on: status
        - remote_transmitter.transmit_raw:
