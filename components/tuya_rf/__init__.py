@@ -64,7 +64,7 @@ TOLERANCE_SCHEMA = cv.typed_schema(
 )
 
 TuyaRfComponent = tuya_rf_ns.class_(
-    "TuyaRfComponent", remote_base.RemoteTransmitterBase, cg.Component
+    "TuyaRfComponent", remote_base.RemoteReceiverBase, remote_base.RemoteTransmitterBase, cg.Component
 )
 
 TurnOffReceiverAction = tuya_rf_ns.class_("TurnOffReceiverAction", automation.Action)
